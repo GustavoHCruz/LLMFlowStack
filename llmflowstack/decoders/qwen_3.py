@@ -33,7 +33,8 @@ class Qwen3(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = False,
-		max_memory: dict | None = None
+		max_memory: dict | None = None,
+		revision: str = "main"
 	) -> None:
 		quantization_config = None
 		if quantization:
@@ -41,7 +42,8 @@ class Qwen3(BaseDecoder):
 			quantization_config = TorchAoConfig(quant_type=quant_config)
 
 		config = AutoConfig.from_pretrained(
-			checkpoint
+			checkpoint,
+			revision=revision
 		)
 
 		if "model_type" in config and "moe" in config.model_type:

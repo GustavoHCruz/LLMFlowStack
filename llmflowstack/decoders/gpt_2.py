@@ -27,7 +27,8 @@ class Gpt2(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = False,
-		max_memory: dict | None = None
+		max_memory: dict | None = None,
+		revision: str = "main"
 	) -> None:
 		quantization_config = None
 		if quantization:
@@ -36,6 +37,7 @@ class Gpt2(BaseDecoder):
 
 		self.model = GPT2LMHeadModel.from_pretrained(
 			checkpoint,
+			revision=revision,
 			quantization_config=quantization_config,
 			attn_implementation="sdpa",
 			dtype="auto",

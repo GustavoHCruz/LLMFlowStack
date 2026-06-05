@@ -59,7 +59,8 @@ class BaseDecoder(ABC):
 		checkpoint: str | Path | None = None,
 		quantization: bool | None = None,
 		max_memory: dict | None = None,
-		seed: int | None = None
+		seed: int | None = None,
+		revision: str = "main"
 	) -> None:
 		if seed:
 			self._set_seed(seed)
@@ -74,7 +75,8 @@ class BaseDecoder(ABC):
 			self.load_checkpoint(
 				checkpoint=checkpoint,
 				quantization=quantization,
-				max_memory=max_memory
+				max_memory=max_memory,
+				revision=revision
 			)
 
 			if quantization:
@@ -96,7 +98,8 @@ class BaseDecoder(ABC):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = None,
-		max_memory: dict | None = None
+		max_memory: dict | None = None,
+		revision: str = "main"
 	) -> None:
 		pass
 
@@ -126,7 +129,8 @@ class BaseDecoder(ABC):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = None,
-		max_memory: dict | None = None
+		max_memory: dict | None = None,
+		revision: str = "main"
 	) -> None:
 		if self.model:
 			self._log("A model is already loaded. Attempting to reset it.", LogLevel.WARNING)

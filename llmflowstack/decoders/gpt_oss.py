@@ -26,7 +26,8 @@ class GptOss(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = False,
-		max_memory: dict | None = None
+		max_memory: dict | None = None,
+		revision: str = "main"
 	) -> None:
 		if quantization:
 			quantization_config = Mxfp4Config(dequantize=False)
@@ -36,6 +37,7 @@ class GptOss(BaseDecoder):
 		try:
 			self.model = GptOssForCausalLM.from_pretrained(
 				checkpoint,
+				revision=revision,
 				quantization_config=quantization_config,
 				dtype="auto",
 				device_map="auto",
