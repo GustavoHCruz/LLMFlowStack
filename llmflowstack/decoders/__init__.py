@@ -1,4 +1,5 @@
 from .gemma_3 import Gemma3
+from .gemma_4 import Gemma4
 from .gpt_2 import Gpt2
 from .gpt_oss import GptOss
 from .llama_3 import Llama3
@@ -8,6 +9,7 @@ from .qwen_3 import Qwen3
 
 __all__ = [
   "Gemma3",
+	"Gemma4",
   "Gpt2",
   "GptOss",
   "Llama3",
