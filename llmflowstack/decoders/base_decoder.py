@@ -13,6 +13,13 @@ from typing import Any, Iterator, Literal
 import numpy as np
 import torch
 from datasets import Dataset
+from llmflowstack.callbacks.force_json import (ForceJsonLogitsProcessor,
+                                               StopOnJsonComplete)
+from llmflowstack.callbacks.log_collector import LogCollectorCallback
+from llmflowstack.collators.multimodal_causal import MultimodalCausalCollator
+from llmflowstack.schemas.params import GenerationParams, TrainParams
+from llmflowstack.utils.exceptions import MissingEssentialProp
+from llmflowstack.utils.logging import LogLevel
 from PIL import Image
 from torch import Tensor, tensor
 from transformers import (AutoProcessor, AutoTokenizer, BatchFeature,
@@ -23,14 +30,6 @@ from transformers import (AutoProcessor, AutoTokenizer, BatchFeature,
 from transformers.tokenization_utils_base import BatchEncoding
 from trl.trainer.sft_config import SFTConfig
 from trl.trainer.sft_trainer import SFTTrainer
-
-from llmflowstack.callbacks.force_json import (ForceJsonLogitsProcessor,
-                                               StopOnJsonComplete)
-from llmflowstack.callbacks.log_collector import LogCollectorCallback
-from llmflowstack.collators.multimodal_causal import MultimodalCausalCollator
-from llmflowstack.schemas.params import GenerationParams, TrainParams
-from llmflowstack.utils.exceptions import MissingEssentialProp
-from llmflowstack.utils.logging import LogLevel
 
 
 @dataclass
@@ -92,7 +91,7 @@ class BaseDecoder(ABC):
 			log_func(message)
 		else:
 			self.logger.info(message)
-	
+		
 	@abstractmethod
 	def _load_model(
 		self,
@@ -197,14 +196,22 @@ class BaseDecoder(ABC):
 
 		os.makedirs(path, exist_ok=True)
 
-		self._log("Saving model...")
-		model_to_save = self.model
+		self._log("Trying to save model with original format...")
 
-		model_to_save.save_pretrained(path)
+		try:
+			self.model.save_pretrained(path)
+		except Exception as e:
+			self._log(f"First attempt failed: {e}. Trying alternative method...")
+			
+			try:
+				self.model.save_pretrained(path, safe_serialization=False)
+			except Exception as second_error:
+				self._log(f"Critical: Failed to save model on both attempts. Error: {second_error}")
+				raise second_error
+
 		self.tokenizer.save_pretrained(path)
 
 		self._log(f"Model and Tokenizer saved at {path}")
-
 		self._log(f"Model custom information saved at {path}")
 
 	@abstractmethod
@@ -595,7 +602,9 @@ class BaseDecoder(ABC):
 		data: ModelInput | str,
 		params: GenerationParams | None = None,
 		force_json: bool = False,
-		follow_prompt_format: bool = True
+		follow_prompt_format: bool = True,
+		skip_prompt: bool = True,
+		skip_special_tokens: bool = True
 	) -> Iterator[str]:
 		if self.model is None or self.tokenizer is None:
 			self._log("Model or Tokenizer missing", LogLevel.WARNING)
@@ -612,8 +621,8 @@ class BaseDecoder(ABC):
 
 		streamer = TextIteratorStreamer(
 			self.tokenizer,
-			skip_prompt=True,
-			skip_special_tokens=True
+			skip_prompt=skip_prompt,
+			skip_special_tokens=skip_special_tokens
 		)
 
 		stopping = []
