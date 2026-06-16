@@ -32,24 +32,35 @@ This framework is designed to provide flexibility when working with different op
 
   - [`LLaMA 4 Scout - Instruct`](https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct)
 
-- **Gemma**
+- **Gemma 3**
 
   - [`Gemma 3 27B - It`](https://huggingface.co/google/gemma-3-27b-it)
 
 - **MedGemma**
 
-  - [`MedGemma 27B - It`](https://huggingface.co/google/medgemma-27b-it)
   - [`MedGemma 4B - It`](https://huggingface.co/google/medgemma-4b-it)
+  - [`MedGemma 27B - It`](https://huggingface.co/google/medgemma-27b-it)
+
+- **Gemma 4**
+
+  - [Gemma 4 12B It](https://huggingface.co/google/gemma-4-12B-it)
+  - [Gemma 4 32B It](https://huggingface.co/google/gemma-4-31B-it)
 
 - **Qwen 3.5**
-  - [`Qwen 3.5 397B - A17B`](https://huggingface.co/Qwen/Qwen3.5-397B-A17B)
-  - [`Qwen 3.5 122B - A10B`](https://huggingface.co/Qwen/Qwen3.5-122B-A10B)
-  - [`Qwen 3.5 35B - A3B`](https://huggingface.co/Qwen/Qwen3.5-35B-A3B)
-  - [`Qwen 3.5 27B`](https://huggingface.co/Qwen/Qwen3.5-27B)
-  - [`Qwen 3.5 9B`](https://huggingface.co/Qwen/Qwen3.5-9B)
-  - [`Qwen 3.5 4B`](https://huggingface.co/Qwen/Qwen3.5-4B)
-  - [`Qwen 3.5 2B`](https://huggingface.co/Qwen/Qwen3.5-2B)
+
   - [`Qwen 3.5 0.8B`](https://huggingface.co/Qwen/Qwen3.5-0.8B)
+  - [`Qwen 3.5 2B`](https://huggingface.co/Qwen/Qwen3.5-2B)
+  - [`Qwen 3.5 4B`](https://huggingface.co/Qwen/Qwen3.5-4B)
+  - [`Qwen 3.5 9B`](https://huggingface.co/Qwen/Qwen3.5-9B)
+  - [`Qwen 3.5 27B`](https://huggingface.co/Qwen/Qwen3.5-27B)
+  - [`Qwen 3.5 35B - A3B`](https://huggingface.co/Qwen/Qwen3.5-35B-A3B)
+  - [`Qwen 3.5 122B - A10B`](https://huggingface.co/Qwen/Qwen3.5-122B-A10B)
+  - [`Qwen 3.5 397B - A17B`](https://huggingface.co/Qwen/Qwen3.5-397B-A17B)
+
+- **Qwen 3.6**
+
+  - [`Qwen 3.6 27B`](https://huggingface.co/Qwen/Qwen3.6-27B)
+  - [`Qwen 3.6 35B - A3B`](https://huggingface.co/Qwen/Qwen3.6-35B-A3B)
 
 > Other architectures based on those **may** function correctly.
 
