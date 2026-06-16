@@ -1,14 +1,13 @@
 from pathlib import Path
 from typing import Iterator
 
-from torchao.quantization import Int4WeightOnlyConfig
-from transformers import TorchAoConfig
-from transformers.models.gemma3 import Gemma3ForConditionalGeneration
-
 from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
 from llmflowstack.utils.logging import LogLevel
+from torchao.quantization import Int4WeightOnlyConfig
+from transformers import TorchAoConfig
+from transformers.models.gemma3 import Gemma3ForConditionalGeneration
 
 
 class Gemma3(BaseDecoder):

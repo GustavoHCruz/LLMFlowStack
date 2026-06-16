@@ -1,6 +1,10 @@
 from pathlib import Path
 from typing import Iterator
 
+from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
+from llmflowstack.schemas.params import GenerationParams
+from llmflowstack.utils.exceptions import MissingEssentialProp
+from llmflowstack.utils.logging import LogLevel
 from torchao.quantization import Float8WeightOnlyConfig
 from transformers import AutoConfig, TorchAoConfig
 from transformers.models.qwen3_5.modeling_qwen3_5 import \
@@ -8,16 +12,18 @@ from transformers.models.qwen3_5.modeling_qwen3_5 import \
 from transformers.models.qwen3_5_moe.modeling_qwen3_5_moe import \
     Qwen3_5MoeForConditionalGeneration
 
-from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
-from llmflowstack.schemas.params import GenerationParams
-from llmflowstack.utils.exceptions import MissingEssentialProp
-from llmflowstack.utils.logging import LogLevel
-
 
 class Qwen3(BaseDecoder):
 	model: Qwen3_5ForConditionalGeneration | Qwen3_5MoeForConditionalGeneration | None = None
 	max_context_len = 32768
 	can_handle_image_processing = True
+	can_think = True
+
+	def set_thinking_mode(
+		self,
+		can_think: bool
+	) -> None:
+		self.can_think = can_think
 
 	def _set_generation_stopping_tokens(
 		self,
@@ -69,7 +75,6 @@ class Qwen3(BaseDecoder):
 		output_text: str | None = None,
 		system_text: str | None = None,
 		reasoning_text: str | None = None,
-		enable_reasoning: bool = True,
 		image_paths: list[str] | None = None
 	) -> str:
 		if not self.tokenizer:
@@ -86,11 +91,8 @@ class Qwen3(BaseDecoder):
 
 		assistant_content = "<|im_start|>assistant\n"
 
-		if enable_reasoning:
-			reasoning = reasoning_text or ""
-			assistant_content += f"<think>\n{reasoning}\n</think>\n\n"
-		else:
-			assistant_content += "<think>\n</think>\n\n"
+		if output_text and (self.can_think or reasoning_text):
+			assistant_content += f"<think>\n{reasoning_text or ''}\n</think>\n\n"
 
 		if output_text:
 			assistant_content += f"{output_text}<|im_end|>"
@@ -107,7 +109,6 @@ class Qwen3(BaseDecoder):
 		output_text: str | None = None,
 		system_text: str | None = None,
 		reasoning_text: str | None = None,
-		enable_reasoning: bool = True,
 		image_paths: list[str] | None = None
 	) -> ModelInput:		
 		return self._tokenize(
@@ -116,7 +117,6 @@ class Qwen3(BaseDecoder):
 			follow_prompt_format=True,
 			system_text=system_text,
 			reasoning_text=reasoning_text,
-			enable_reasoning=enable_reasoning,
 			image_paths=image_paths
 		)
 
@@ -143,18 +143,22 @@ class Qwen3(BaseDecoder):
 		
 		start_index, outputs = generation_outputs
 
-		decoded = self.tokenizer.decode(outputs[0])
+		answer = outputs[0][start_index:]
+
+		decoded = self.tokenizer.decode(answer)
 
 		if isinstance(decoded, list):
 			decoded = decoded[0]
 
-		start = decoded.find("</think>", start_index)
+		start = decoded.find("</think>", 0)
 		if start == -1:
-			start = start_index
+			start = 0
 		else:
 			start += len("</think>")
 
 		end = decoded.find("<|im_end|>", start)
+		if end == -1:
+			end = len(decoded)
 
 		return decoded[start:end].strip()
 	
@@ -183,9 +187,8 @@ class Qwen3(BaseDecoder):
 				buffer = buffer.split("<think>", 1)[1]
 
 			if thinking:
-				if "</think>" in buffer:
-					buffer = buffer.split("</think>", 1)[1]
-					buffer = buffer.strip()
+				if "</think>\n\n" in buffer:
+					buffer = buffer.split("</think>\n\n", 1)[1]
 					thinking = False
 				else:
 					continue
