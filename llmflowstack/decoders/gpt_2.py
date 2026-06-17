@@ -1,13 +1,12 @@
 from pathlib import Path
 from typing import Iterator
 
-from torchao.quantization import Int4WeightOnlyConfig
-from transformers import TorchAoConfig
-from transformers.models.gpt2 import GPT2LMHeadModel
-
 from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.logging import LogLevel
+from torchao.quantization import Int4WeightOnlyConfig
+from transformers import TorchAoConfig
+from transformers.models.gpt2 import GPT2LMHeadModel
 
 
 class Gpt2(BaseDecoder):
@@ -27,8 +26,7 @@ class Gpt2(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = False,
-		max_memory: dict | None = None,
-		revision: str = "main"
+		max_memory: dict | None = None
 	) -> None:
 		quantization_config = None
 		if quantization:
@@ -37,7 +35,6 @@ class Gpt2(BaseDecoder):
 
 		self.model = GPT2LMHeadModel.from_pretrained(
 			checkpoint,
-			revision=revision,
 			quantization_config=quantization_config,
 			attn_implementation="sdpa",
 			dtype="auto",

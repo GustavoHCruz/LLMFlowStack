@@ -1,19 +1,29 @@
 from pathlib import Path
 from typing import Iterator, Literal
 
-from transformers.models.gpt_oss import GptOssForCausalLM
-from transformers.utils.quantization_config import Mxfp4Config
-
 from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
 from llmflowstack.utils.logging import LogLevel
+from transformers.models.gpt_oss import GptOssForCausalLM
+from transformers.utils.quantization_config import Mxfp4Config
 
 
 class GptOss(BaseDecoder):
 	model: GptOssForCausalLM | None = None
 	reasoning_level: Literal["Low", "Medium", "High", "Off"] = "Low"
 	max_context_len = 32768
+
+	def set_reasoning_level(
+		self,
+		level: Literal["Low", "Medium", "High", "Off"]
+	) -> None:
+		self.reasoning_level = level
+	
+	def disable_reasoning(
+		self
+	) -> None:
+		self.reasoning_level = "Off"
 
 	def _set_generation_stopping_tokens(
 		self,
@@ -26,8 +36,7 @@ class GptOss(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = False,
-		max_memory: dict | None = None,
-		revision: str = "main"
+		max_memory: dict | None = None
 	) -> None:
 		if quantization:
 			quantization_config = Mxfp4Config(dequantize=False)
@@ -37,7 +46,6 @@ class GptOss(BaseDecoder):
 		try:
 			self.model = GptOssForCausalLM.from_pretrained(
 				checkpoint,
-				revision=revision,
 				quantization_config=quantization_config,
 				dtype="auto",
 				device_map="auto",
@@ -102,12 +110,6 @@ class GptOss(BaseDecoder):
 			developer_text=developer_text,
 			reasoning_text=reasoning_text
 		)
-
-	def set_reasoning_level(
-		self,
-		level: Literal["Low", "Medium", "High", "Off"]
-	) -> None:
-		self.reasoning_level = level
 
 	def generate(
 		self,

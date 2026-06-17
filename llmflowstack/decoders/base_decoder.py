@@ -58,8 +58,7 @@ class BaseDecoder(ABC):
 		checkpoint: str | Path | None = None,
 		quantization: bool | None = None,
 		max_memory: dict | None = None,
-		seed: int | None = None,
-		revision: str = "main"
+		seed: int | None = None
 	) -> None:
 		if seed:
 			self._set_seed(seed)
@@ -74,8 +73,7 @@ class BaseDecoder(ABC):
 			self.load_checkpoint(
 				checkpoint=checkpoint,
 				quantization=quantization,
-				max_memory=max_memory,
-				revision=revision
+				max_memory=max_memory
 			)
 
 			if quantization:
@@ -97,8 +95,7 @@ class BaseDecoder(ABC):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = None,
-		max_memory: dict | None = None,
-		revision: str = "main"
+		max_memory: dict | None = None
 	) -> None:
 		pass
 
@@ -106,7 +103,9 @@ class BaseDecoder(ABC):
 		self,
 		checkpoint: str | Path
 	) -> None:
-		tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+		tokenizer = AutoTokenizer.from_pretrained(
+			checkpoint
+		)
 		tokenizer.pad_token = tokenizer.eos_token
 		tokenizer.add_eos_token = True
 		tokenizer.padding_side = "right"
@@ -118,8 +117,7 @@ class BaseDecoder(ABC):
 		checkpoint: str | Path
 	) -> None:
 		processor = AutoProcessor.from_pretrained(
-			checkpoint,
-			use_fast=True
+			checkpoint
 		)
 		
 		self.processor = processor
@@ -128,8 +126,7 @@ class BaseDecoder(ABC):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = None,
-		max_memory: dict | None = None,
-		revision: str = "main"
+		max_memory: dict | None = None
 	) -> None:
 		if self.model:
 			self._log("A model is already loaded. Attempting to reset it.", LogLevel.WARNING)
@@ -185,7 +182,8 @@ class BaseDecoder(ABC):
 
 	def save_checkpoint(
 		self,
-		path: str
+		path: str,
+		save_original_format: bool = True
 	) -> None:
 		if not self.model:
 			self._log("No model to save.", LogLevel.WARNING)
@@ -198,21 +196,18 @@ class BaseDecoder(ABC):
 
 		self._log("Trying to save model with original format...")
 
-		try:
-			self.model.save_pretrained(path)
-		except Exception as e:
-			self._log(f"First attempt failed: {e}. Trying alternative method...")
-			
-			try:
-				self.model.save_pretrained(path, safe_serialization=False)
-			except Exception as second_error:
-				self._log(f"Critical: Failed to save model on both attempts. Error: {second_error}")
-				raise second_error
-
+		self.model.save_pretrained(
+			save_directory=path,
+			save_original_format=save_original_format
+		)
 		self.tokenizer.save_pretrained(path)
+		if self.processor:
+			self.processor.save_pretrained(path)
 
-		self._log(f"Model and Tokenizer saved at {path}")
-		self._log(f"Model custom information saved at {path}")
+		if self.processor:
+			self._log(f"Model, Tokenizer and Processor saved at {path}")
+		else:
+			self._log(f"Model and Tokenizer saved at {path}")
 
 	@abstractmethod
 	def _set_generation_stopping_tokens(
@@ -242,6 +237,11 @@ class BaseDecoder(ABC):
 		*args: Any,
 		**kwargs: Any
 	) -> str:
+		pass
+
+	def disable_reasoning(
+		self
+	) -> None:
 		pass
 	
 	def _squeeze_1d(

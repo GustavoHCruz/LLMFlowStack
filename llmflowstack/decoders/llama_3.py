@@ -2,14 +2,13 @@ from pathlib import Path
 from typing import Iterator
 
 from huggingface_hub import revision_exists
-from torchao.quantization import Int4WeightOnlyConfig
-from transformers import TorchAoConfig
-from transformers.models.llama import LlamaForCausalLM
-
 from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
 from llmflowstack.utils.logging import LogLevel
+from torchao.quantization import Int4WeightOnlyConfig
+from transformers import TorchAoConfig
+from transformers.models.llama import LlamaForCausalLM
 
 
 class Llama3(BaseDecoder):
@@ -30,8 +29,7 @@ class Llama3(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = None,
-		max_memory: dict | None = None,
-		revision: str = "main"
+		max_memory: dict | None = None
 	) -> None:
 		quantization_config = None
 		if quantization:
@@ -40,7 +38,6 @@ class Llama3(BaseDecoder):
 
 		self.model = LlamaForCausalLM.from_pretrained(
 			checkpoint,
-			revision=revision,
 			quantization_config=quantization_config,
 			attn_implementation="sdpa",
 			dtype="auto",

@@ -24,6 +24,11 @@ class Qwen3(BaseDecoder):
 		can_think: bool
 	) -> None:
 		self.can_think = can_think
+	
+	def disable_reasoning(
+		self
+	) -> None:
+		self.can_think = False
 
 	def _set_generation_stopping_tokens(
 		self,
@@ -39,8 +44,7 @@ class Qwen3(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = False,
-		max_memory: dict | None = None,
-		revision: str = "main"
+		max_memory: dict | None = None
 	) -> None:
 		quantization_config = None
 		if quantization:
@@ -48,8 +52,7 @@ class Qwen3(BaseDecoder):
 			quantization_config = TorchAoConfig(quant_type=quant_config)
 
 		config = AutoConfig.from_pretrained(
-			checkpoint,
-			revision=revision
+			checkpoint
 		)
 
 		if "model_type" in config and "moe" in config.model_type:
@@ -91,9 +94,13 @@ class Qwen3(BaseDecoder):
 
 		assistant_content = "<|im_start|>assistant\n"
 
-		if output_text and (self.can_think or reasoning_text):
+		if output_text:
 			assistant_content += f"<think>\n{reasoning_text or ''}\n</think>\n\n"
-
+			assistant_content += f"{output_text}<|im_end|>"
+		else:
+			if not self.can_think:
+				assistant_content += f"<think>\n</think>\n\n"
+		
 		if output_text:
 			assistant_content += f"{output_text}<|im_end|>"
 

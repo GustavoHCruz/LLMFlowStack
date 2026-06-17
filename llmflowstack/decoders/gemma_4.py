@@ -20,6 +20,11 @@ class Gemma4(BaseDecoder):
 		can_think: bool
 	) -> None:
 		self.can_think = can_think
+	
+	def disable_reasoning(
+		self
+	) -> None:
+		self.can_think = False
 
 	def _set_generation_stopping_tokens(
 		self,
@@ -35,8 +40,7 @@ class Gemma4(BaseDecoder):
 		self,
 		checkpoint: str | Path,
 		quantization: bool | None = None,
-		max_memory: dict | None = None,
-		revision: str = "main"
+		max_memory: dict | None = None
 	) -> None:
 		quantization_config = None
 		if quantization:
@@ -45,7 +49,6 @@ class Gemma4(BaseDecoder):
 
 		self.model = AutoModelForMultimodalLM.from_pretrained(
 			checkpoint,
-			revision=revision,
 			quantization_config=quantization_config,
 			attn_implementation="sdpa",
 			dtype="auto",
@@ -80,12 +83,13 @@ class Gemma4(BaseDecoder):
 
 		assistant_content = "<|turn>model\n"
 		
-		if output_text and (self.can_think or reasoning_text):
-			assistant_content += f"<|channel>thought\n{reasoning_text or ''}<channel|>"
-		
 		if output_text:
+			assistant_content += f"<|channel>thought\n{reasoning_text or ''}<channel|>"
 			assistant_content += f"{output_text}<turn|>"
-	
+		else:
+			if not self.can_think:
+				assistant_content += "<|channel>thought\n<channel|>"
+
 		return (
 			f"<bos>"
 			f"<|turn>system\n{can_think_content}{system_content}<turn|>\n"
