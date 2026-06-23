@@ -43,8 +43,8 @@ This framework is designed to provide flexibility when working with different op
 
 - **Gemma 4**
 
-  - [Gemma 4 12B It](https://huggingface.co/google/gemma-4-12B-it)
-  - [Gemma 4 32B It](https://huggingface.co/google/gemma-4-31B-it)
+  - [`Gemma 4 12B It`](https://huggingface.co/google/gemma-4-12B-it)
+  - [`Gemma 4 32B It`](https://huggingface.co/google/gemma-4-31B-it)
 
 - **Qwen 3.5**
 
