@@ -6,7 +6,7 @@ from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
 from llmflowstack.utils.logging import LogLevel
-from torchao.quantization import Int4WeightOnlyConfig
+from torchao.quantization import Float8WeightOnlyConfig
 from transformers import TorchAoConfig
 from transformers.models.llama import LlamaForCausalLM
 
@@ -33,7 +33,7 @@ class Llama3(BaseDecoder):
 	) -> None:
 		quantization_config = None
 		if quantization:
-			quant_config = Int4WeightOnlyConfig(group_size=128)
+			quant_config = Float8WeightOnlyConfig()
 			quantization_config = TorchAoConfig(quant_type=quant_config)
 
 		self.model = LlamaForCausalLM.from_pretrained(
