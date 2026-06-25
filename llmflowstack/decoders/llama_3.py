@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Iterator
 
-from huggingface_hub import revision_exists
 from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
