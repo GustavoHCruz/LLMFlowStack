@@ -279,18 +279,23 @@ class BaseDecoder(ABC):
 				output_text=output_text
 			)
 
-		image_paths = kwargs.get("image_paths", None)
-		
-		if image_paths and self.processor is not None:
-			images = []
-			for path in image_paths:
-				images.append(
+		image_paths = kwargs.get("image_paths")
+		images = kwargs.get("images")
+
+		pil_images = []
+		if (image_paths or images) and self.processor is not None:
+			for path in (image_paths or []):
+				pil_images.append(
 					Image.open(path).convert("RGB")
+				)
+			for image in (images or []):
+				pil_images.append(
+					image.convert("RGB")
 				)
 			
 			processor_output: BatchFeature = self.processor(
 				text=promptfied_input,
-				images=images,
+				images=pil_images,
 				add_special_tokens=False
 			)
 			input_ids = processor_output["input_ids"][0]
