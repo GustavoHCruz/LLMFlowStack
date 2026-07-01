@@ -79,7 +79,8 @@ class Qwen3(BaseDecoder):
 		output_text: str | None = None,
 		system_text: str | None = None,
 		reasoning_text: str | None = None,
-		image_paths: list[str] | None = None
+		image_paths: list[str] | None = None,
+		images: list[Image.Image] | None = None
 	) -> str:
 		if not self.tokenizer:
 			raise MissingEssentialProp("Could not find tokenizer.")
@@ -91,6 +92,9 @@ class Qwen3(BaseDecoder):
 		user_content = input_text
 		if image_paths is not None:
 			for _ in image_paths:
+				user_content += "<|vision_start|><|image_pad|><|vision_end|>"
+		if images is not None:
+			for _ in images:
 				user_content += "<|vision_start|><|image_pad|><|vision_end|>"
 
 		assistant_content = "<|im_start|>assistant\n"

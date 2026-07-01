@@ -63,7 +63,8 @@ class Gemma4(BaseDecoder):
 		output_text: str | None = None,
 		system_text: str | None = None,
 		reasoning_text: str | None = None,
-		image_paths: list[str] | None = None
+		image_paths: list[str] | None = None,
+		images: list[Image.Image] | None = None
 	) -> str:
 		if not self.tokenizer:
 			raise MissingEssentialProp("Could not find tokenizer.")
@@ -79,6 +80,9 @@ class Gemma4(BaseDecoder):
 		user_content = ""
 		if image_paths is not None:
 			for _ in image_paths:
+				user_content += "<|image|>"
+		if images is not None:
+			for _ in images:
 				user_content += "<|image|>"
 		user_content += str(input_text)
 
