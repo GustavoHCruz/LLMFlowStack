@@ -5,6 +5,7 @@ from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
 from llmflowstack.utils.logging import LogLevel
+from PIL import Image
 from torchao.quantization import Float8WeightOnlyConfig
 from transformers import AutoConfig, TorchAoConfig
 from transformers.models.qwen3_5.modeling_qwen3_5 import \
@@ -116,7 +117,8 @@ class Qwen3(BaseDecoder):
 		output_text: str | None = None,
 		system_text: str | None = None,
 		reasoning_text: str | None = None,
-		image_paths: list[str] | None = None
+		image_paths: list[str] | None = None,
+		images: list[Image.Image] | None = None
 	) -> ModelInput:		
 		return self._tokenize(
 			input_text=input_text,
@@ -124,7 +126,8 @@ class Qwen3(BaseDecoder):
 			follow_prompt_format=True,
 			system_text=system_text,
 			reasoning_text=reasoning_text,
-			image_paths=image_paths
+			image_paths=image_paths,
+			images=images
 		)
 
 	def generate(

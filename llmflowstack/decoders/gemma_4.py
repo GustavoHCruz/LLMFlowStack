@@ -5,6 +5,7 @@ from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
 from llmflowstack.utils.logging import LogLevel
+from PIL import Image
 from torchao.quantization import Float8WeightOnlyConfig
 from transformers import AutoModelForMultimodalLM, TorchAoConfig
 
@@ -102,14 +103,16 @@ class Gemma4(BaseDecoder):
 		input_text: str,
 		output_text: str | None = None,
 		system_text: str | None = None,
-		image_paths: list[str] | None = None
+		image_paths: list[str] | None = None,
+		images: list[Image.Image] | None = None
 	) -> ModelInput:
 		return self._tokenize(
 			input_text=input_text,
 			output_text=output_text,
 			follow_prompt_format=True,
 			system_text=system_text,
-			image_paths=image_paths
+			image_paths=image_paths,
+			images=images
 		)
 
 	def generate(
