@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Iterator
 
+from jinja2 import Template
 from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
@@ -79,7 +80,7 @@ class Qwen3(BaseDecoder):
 		output_text: str | None = None,
 		system_text: str | None = None,
 		reasoning_text: str | None = None,
-		image_paths: list[str] | None = None,
+		image_paths: list[Path | str] | None = None,
 		images: list[Image.Image] | None = None
 	) -> str:
 		if not self.tokenizer:
@@ -121,7 +122,7 @@ class Qwen3(BaseDecoder):
 		output_text: str | None = None,
 		system_text: str | None = None,
 		reasoning_text: str | None = None,
-		image_paths: list[str] | None = None,
+		image_paths: list[Path | str] | None = None,
 		images: list[Image.Image] | None = None
 	) -> ModelInput:		
 		return self._tokenize(
@@ -136,7 +137,7 @@ class Qwen3(BaseDecoder):
 
 	def generate(
 		self,
-		data: ModelInput | str,
+		data: str | Template | ModelInput,
 		params: GenerationParams | None = None,
 		force_json: bool = False,
 		follow_prompt_format: bool = True
@@ -178,7 +179,7 @@ class Qwen3(BaseDecoder):
 	
 	def generate_stream(
 		self,
-		data: ModelInput | str,
+		data: str | Template | ModelInput,
 		params: GenerationParams | None = None,
 		force_json: bool = False,
 		follow_prompt_format: bool = True

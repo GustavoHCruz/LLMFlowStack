@@ -13,6 +13,7 @@ from typing import Any, Iterator, Literal
 import numpy as np
 import torch
 from datasets import Dataset
+from jinja2 import Template
 from llmflowstack.callbacks.force_json import (ForceJsonLogitsProcessor,
                                                StopOnJsonComplete)
 from llmflowstack.callbacks.log_collector import LogCollectorCallback
@@ -498,7 +499,7 @@ class BaseDecoder(ABC):
 
 	def _prepare_generation(
 		self,
-		data: ModelInput | str,
+		data: str | Template | ModelInput,
 		params: GenerationParams | None = None,
 		follow_prompt_format: bool = True
 	) -> dict[str, Tensor] | None:
@@ -511,6 +512,11 @@ class BaseDecoder(ABC):
 		if isinstance(data, str):
 			model_input = self._tokenize(
 				input_text=data,
+				follow_prompt_format=follow_prompt_format
+			)
+		elif isinstance(data, Template):
+			model_input = self._tokenize(
+				input_text=data.render(),
 				follow_prompt_format=follow_prompt_format
 			)
 		else:
@@ -552,7 +558,7 @@ class BaseDecoder(ABC):
 
 	def _generate(
 		self,
-		data: ModelInput | str,
+		data: str | Template | ModelInput,
 		params: GenerationParams | None,
 		force_json: bool,
 		follow_prompt_format: bool
@@ -604,7 +610,7 @@ class BaseDecoder(ABC):
 	
 	def _generate_stream(
 		self,
-		data: ModelInput | str,
+		data: str | Template | ModelInput,
 		params: GenerationParams | None = None,
 		force_json: bool = False,
 		follow_prompt_format: bool = True,
@@ -668,7 +674,7 @@ class BaseDecoder(ABC):
 	@abstractmethod
 	def generate(
 		self,
-		data: ModelInput | str,
+		data: str | Template | ModelInput,
 		params: GenerationParams | None = None,
 		force_json: bool = False,
 		*args: Any,
@@ -679,7 +685,7 @@ class BaseDecoder(ABC):
 	@abstractmethod
 	def generate_stream(
 		self,
-		data: ModelInput | str,
+		data: str | Template | ModelInput,
 		params: GenerationParams | None = None,
 		force_json: bool = False,
 		*args: Any,
