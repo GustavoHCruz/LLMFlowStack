@@ -1,2 +1,2 @@
 class MissingEssentialProp(Exception):
-  pass
+    pass

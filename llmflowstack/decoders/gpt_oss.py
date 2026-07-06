@@ -2,178 +2,168 @@ from pathlib import Path
 from typing import Iterator, Literal
 
 from jinja2 import Template
+from transformers.models.gpt_oss import GptOssForCausalLM
+from transformers.utils.quantization_config import Mxfp4Config
+
 from llmflowstack.decoders.base_decoder import BaseDecoder, ModelInput
 from llmflowstack.schemas.params import GenerationParams
 from llmflowstack.utils.exceptions import MissingEssentialProp
 from llmflowstack.utils.logging import LogLevel
-from transformers.models.gpt_oss import GptOssForCausalLM
-from transformers.utils.quantization_config import Mxfp4Config
 
 
 class GptOss(BaseDecoder):
-	model: GptOssForCausalLM | None = None
-	reasoning_level: Literal["Low", "Medium", "High", "Off"] = "Low"
-	max_context_len = 32768
+    model: GptOssForCausalLM | None = None
+    reasoning_level: Literal["Low", "Medium", "High", "Off"] = "Low"
+    max_context_len = 32768
 
-	def set_reasoning_level(
-		self,
-		level: Literal["Low", "Medium", "High", "Off"]
-	) -> None:
-		self.reasoning_level = level
-	
-	def disable_reasoning(
-		self
-	) -> None:
-		self.reasoning_level = "Off"
+    def set_reasoning_level(
+        self, level: Literal["Low", "Medium", "High", "Off"]
+    ) -> None:
+        self.reasoning_level = level
 
-	def _set_generation_stopping_tokens(
-		self,
-		tokens: list[int]
-	) -> None:
-		particular_tokens = [200012, 200002]
-		self.stop_token_ids = particular_tokens + tokens
+    def disable_reasoning(self) -> None:
+        self.reasoning_level = "Off"
 
-	def _load_model(
-		self,
-		checkpoint: str | Path,
-		quantization: bool | None = False,
-		max_memory: dict | None = None
-	) -> None:
-		if quantization:
-			quantization_config = Mxfp4Config(dequantize=False)
-		else:
-			quantization_config = Mxfp4Config(dequantize=True)
+    def _set_generation_stopping_tokens(self, tokens: list[int]) -> None:
+        particular_tokens = [200012, 200002]
+        self.stop_token_ids = particular_tokens + tokens
 
-		try:
-			self.model = GptOssForCausalLM.from_pretrained(
-				checkpoint,
-				quantization_config=quantization_config,
-				dtype="auto",
-				device_map="auto",
-				max_memory=max_memory
-			)
-		except Exception as _:
-			self._log("Error trying to load the model. Defaulting to load without quantization...", LogLevel.WARNING)
-			self.model = GptOssForCausalLM.from_pretrained(
-				checkpoint,
-				dtype="auto",
-				device_map="auto"
-			)
+    def _load_model(
+        self,
+        checkpoint: str | Path,
+        quantization: bool | None = False,
+        max_memory: dict | None = None,
+    ) -> None:
+        if quantization:
+            quantization_config = Mxfp4Config(dequantize=False)
+        else:
+            quantization_config = Mxfp4Config(dequantize=True)
 
-	def _build_prompt(
-		self,
-		input_text: str,
-		output_text: str | None = None,
-		system_text: str | None = None,
-		developer_text: str | None = None,
-		reasoning_text: str | None = None
-	) -> str:
-		if not self.tokenizer:
-			raise MissingEssentialProp("Could not find tokenizer.")
+        try:
+            self.model = GptOssForCausalLM.from_pretrained(
+                checkpoint,
+                quantization_config=quantization_config,
+                dtype="auto",
+                device_map="auto",
+                max_memory=max_memory,
+            )
+        except Exception as _:
+            self._log(
+                "Error trying to load the model. Defaulting to load without quantization...",
+                LogLevel.WARNING,
+            )
+            self.model = GptOssForCausalLM.from_pretrained(
+                checkpoint, dtype="auto", device_map="auto"
+            )
 
-		system_content = f"<|start|>system<|message|>You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2024-06\n\nReasoning: {self.reasoning_level}\n\n{system_text or ''}# Valid channels: analysis, commentary, final. Channel must be included for every message.<|end|>"
-		if self.reasoning_level == "Off":
-			system_text = f"<|start|>system<|message|>You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2024-06\n\n{system_text}# Valid channels: final. Channel must be included for every message.<|end|>"
+    def _build_prompt(
+        self,
+        input_text: str,
+        output_text: str | None = None,
+        system_text: str | None = None,
+        developer_text: str | None = None,
+        reasoning_text: str | None = None,
+    ) -> str:
+        if not self.tokenizer:
+            raise MissingEssentialProp("Could not find tokenizer.")
 
-		developer_content = ""
-		if developer_text:
-			developer_content = f"<|start|>developer<|message|># Instructions\n\n{developer_text or ''}<|end|>"
+        system_content = f"<|start|>system<|message|>You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2024-06\n\nReasoning: {self.reasoning_level}\n\n{system_text or ''}# Valid channels: analysis, commentary, final. Channel must be included for every message.<|end|>"
+        if self.reasoning_level == "Off":
+            system_text = f"<|start|>system<|message|>You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2024-06\n\n{system_text}# Valid channels: final. Channel must be included for every message.<|end|>"
 
-		assistant_content = ""
-		if reasoning_text:
-			assistant_content += f"<|start|>assistant<|channel|>analysis<|message|>{reasoning_text or ''}<|end|>"
+        developer_content = ""
+        if developer_text:
+            developer_content = f"<|start|>developer<|message|># Instructions\n\n{developer_text or ''}<|end|>"
 
-		if output_text:
-			assistant_content += f"<|start|>assistant<|channel|>final<|message|>{output_text or ''}<|return|>"
+        assistant_content = ""
+        if reasoning_text:
+            assistant_content += f"<|start|>assistant<|channel|>analysis<|message|>{reasoning_text or ''}<|end|>"
 
-		if not output_text and self.reasoning_level == "Off":
-			assistant_content = "<|start|>assistant<|channel|>analysis<|message|><|end|><|start|>assistant<|channel|>final<|message|>"
+        if output_text:
+            assistant_content += f"<|start|>assistant<|channel|>final<|message|>{output_text or ''}<|return|>"
 
-		return (
-			f"{system_content}{developer_content}"
-			f"<|start|>user<|message|>{input_text}<|end|>"
-			f"{assistant_content}"
-		)
-		
-	def build_input(
-		self,
-		input_text: str,
-		output_text: str | None = None,
-		system_text: str | None = None,
-		developer_text: str | None = None,
-		reasoning_text: str | None = None
-	) -> ModelInput:		
-		return self._tokenize(
-			input_text=input_text,
-			output_text=output_text,
-			follow_prompt_format=True,
-			system_text=system_text,
-			developer_text=developer_text,
-			reasoning_text=reasoning_text
-		)
+        if not output_text and self.reasoning_level == "Off":
+            assistant_content = "<|start|>assistant<|channel|>analysis<|message|><|end|><|start|>assistant<|channel|>final<|message|>"
 
-	def generate(
-		self,
-		data: str | Template | ModelInput,
-		params: GenerationParams | None = None,
-		force_json: bool = False
-	) -> str | None:
-		if self.model is None or self.tokenizer is None:
-			self._log("Model or Tokenizer missing", LogLevel.WARNING)
-			return None
+        return (
+            f"{system_content}{developer_content}"
+            f"<|start|>user<|message|>{input_text}<|end|>"
+            f"{assistant_content}"
+        )
 
-		generation_outputs = self._generate(
-			data=data,
-			params=params,
-			force_json=force_json,
-			follow_prompt_format=True
-		)
+    def build_input(
+        self,
+        input_text: str,
+        output_text: str | None = None,
+        system_text: str | None = None,
+        developer_text: str | None = None,
+        reasoning_text: str | None = None,
+    ) -> ModelInput:
+        return self._tokenize(
+            input_text=input_text,
+            output_text=output_text,
+            follow_prompt_format=True,
+            system_text=system_text,
+            developer_text=developer_text,
+            reasoning_text=reasoning_text,
+        )
 
-		if generation_outputs is None:
-			return None
-		
-		_, outputs = generation_outputs
+    def generate(
+        self,
+        data: str | Template | ModelInput,
+        params: GenerationParams | None = None,
+        force_json: bool = False,
+    ) -> str | None:
+        if self.model is None or self.tokenizer is None:
+            self._log("Model or Tokenizer missing", LogLevel.WARNING)
+            return None
 
-		decoded = self.tokenizer.decode(outputs[0])
+        generation_outputs = self._generate(
+            data=data, params=params, force_json=force_json, follow_prompt_format=True
+        )
 
-		if isinstance(decoded, list):
-			decoded = decoded[0]
+        if generation_outputs is None:
+            return None
 
-		start = decoded.rfind("<|message|>")
-		if start == -1:
-			return ""
+        _, outputs = generation_outputs
 
-		start += len("<|message|>")
+        decoded = self.tokenizer.decode(outputs[0])
 
-		end = decoded.find("<|return|>", start)
-		if end == -1:
-			end = len(decoded)
+        if isinstance(decoded, list):
+            decoded = decoded[0]
 
-		return decoded[start:end].strip()
-	
-	def generate_stream(
-		self,
-		data: str | Template | ModelInput,
-		params: GenerationParams | None = None,
-		force_json: bool = False
-	) -> Iterator[str]:
-		streamer = self._generate_stream(
-			data=data,
-			params=params,
-			force_json=force_json,
-			follow_prompt_format=True
-		)
+        start = decoded.rfind("<|message|>")
+        if start == -1:
+            return ""
 
-		done_thinking = self.reasoning_level == "Off"
-		buffer = ""
+        start += len("<|message|>")
 
-		for new_text in streamer:
-			buffer += new_text
+        end = decoded.find("<|return|>", start)
+        if end == -1:
+            end = len(decoded)
 
-			if "final" in buffer and not done_thinking:
-				done_thinking = True
-				buffer = buffer.split("final", 1)[1]
-			
-			if done_thinking:
-				yield buffer
-				buffer = ""
+        return decoded[start:end].strip()
+
+    def generate_stream(
+        self,
+        data: str | Template | ModelInput,
+        params: GenerationParams | None = None,
+        force_json: bool = False,
+    ) -> Iterator[str]:
+        streamer = self._generate_stream(
+            data=data, params=params, force_json=force_json, follow_prompt_format=True
+        )
+
+        done_thinking = self.reasoning_level == "Off"
+        buffer = ""
+
+        for new_text in streamer:
+            buffer += new_text
+
+            if "final" in buffer and not done_thinking:
+                done_thinking = True
+                buffer = buffer.split("final", 1)[1]
+
+            if done_thinking:
+                yield buffer
+                buffer = ""
