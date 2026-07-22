@@ -464,7 +464,7 @@ class BaseDecoder(ABC):
             self._log("Model or Tokenizer missing", LogLevel.WARNING)
             return None
 
-        self._log(f"Processing received input...'")
+        self._log("Processing received input...'")
 
         if isinstance(data, str):
             model_input = self._tokenize(
@@ -661,4 +661,4 @@ class BaseDecoder(ABC):
     def set_seed(self, seed: int) -> None:
         self._log(f"Setting seed value {seed}")
         self._set_seed(seed)
-        self._log(f"Seed setted")
+        self._log("Seed setted")

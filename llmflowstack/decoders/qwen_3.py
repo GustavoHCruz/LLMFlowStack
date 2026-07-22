@@ -101,7 +101,7 @@ class Qwen3(BaseDecoder):
             assistant_content += f"{output_text}<|im_end|>"
         else:
             if not self.can_think:
-                assistant_content += f"<think>\n</think>\n\n"
+                assistant_content += "<think>\n</think>\n\n"
 
         if output_text:
             assistant_content += f"{output_text}<|im_end|>"
